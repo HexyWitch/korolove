@@ -7,18 +7,27 @@ playstate = {}
 function playstate:enter()
 	self.blockgrid = blockgrid(25, 10, 22, 25)
 
-	self.updateinterval = 0.5
+	self.baseupdateinterval = 0.5
+	self.fastupdateinterval = 0.05
+	self.updateinterval = self.baseupdateinterval
 	self.updatetimer = 0
 
 	self:firstpiece()
+
+	if assets.sounds.music then
+		assets.sounds.music:setLooping(true)
+		assets.sounds.music:setVolume(0.3)
+		assets.sounds.music:play()
+	end
 end
 
-function playstate:keypressed(key)
-	if key == "up" then
+function playstate:keypressed(key, isrepeat)
+	if key == "up" and not isrepeat then
 		self:rotatepiece()
 	end
-	if key == "down" then
-		self.updateinterval = 0.05
+	if key == "down" and not isrepeat then
+		self.updateinterval = self.fastupdateinterval
+		self.isfastinterval = true
 	end
 	if key == "left" then
 		self:movepieceleft()
@@ -26,21 +35,18 @@ function playstate:keypressed(key)
 	if key == "right" then
 		self:movepieceright()
 	end
-	if key == "a" then
-		local rotated = self.activepiece:offsetblocks(self.activepiece:rotatedblocks(), {0,0})
-		for _,block in ipairs(rotated) do
-			print(string.format("{%s, %s}", block[1], block[2]))
-		end
-	end
 end
 
 function playstate:keyreleased(key)
 	if key == "down" then
-		self.updateinterval = 0.5
+		self.updateinterval = self.baseupdateinterval
+		self.isfastinterval = false
 	end
 end
 
 function playstate:update(dt)
+	if not self.isfastinterval then self.updateinterval = self.baseupdateinterval end
+
 	self.updatetimer = self.updatetimer + dt
 	if self.updatetimer > self.updateinterval then
 
@@ -50,11 +56,18 @@ function playstate:update(dt)
 		else
 			--Can't move it down, delete the piece and place blocks in the grid
 			self.blockgrid:placepiece(self.activepiece)
+
+			if self.blockgrid:clearemptyrows() then
+				self.baseupdateinterval = self.baseupdateinterval * 0.95
+				assets.sounds.clear:play()
+			else
+			    assets.sounds.blip:play()
+			end
+
 			self:newpiece()
 		end
 
 		--Check for cleared rows
-		self.blockgrid:clearemptyrows()
 
 		self.updatetimer = 0
 	end
@@ -68,7 +81,9 @@ function playstate:draw()
 end
 
 function playstate:exit()
-
+	if assets.sounds.music then
+		assets.sounds.music:pause()
+	end
 end
 
 function playstate:rotatepiece()
@@ -81,7 +96,7 @@ end
 function playstate:newpiece()
 	self.activepiece = self.nextpiece
 	self.nextpiece = koropiece(piecetypes.random())
-	self.activepiece.position = {5, 0}
+	self.activepiece.position = {4, 0}
 
 	local placed = self.activepiece:offsetblocks(self.activepiece.blocks, {0,0})
 
@@ -108,6 +123,6 @@ function playstate:movepieceright()
 end
 
 function playstate:drawnextpiece()
-	local position = {340, 100}
-	self.nextpiece:draw(position, 25)
+	love.graphics.draw(assets.graphics.nextpiece, 316, 44) --Box around the piece
+	self.nextpiece:draw({326, 54}, 25, true)
 end

@@ -1,7 +1,7 @@
 require "vec2"
 
 -- blocks is a table of integer offsets for the blocks that constitute the play piece, {0, 0} is the leftmost bottommost block
-function koropiece(blocks, origin)
+function koropiece(blocks, origin, color, previewoffset)
 	local drawrect = love.graphics.rectangle
 
 	local piece = {}
@@ -9,6 +9,8 @@ function koropiece(blocks, origin)
 	piece.blocks = blocks
 	piece.origin = origin
 	piece.position = {0, 0}
+	piece.color = color or {255, 255, 255}
+	piece.previewoffset = previewoffset or {0, 0}
 
 	function piece:move(x, y)
 		self.position[1] = self.position[1] + x
@@ -48,12 +50,17 @@ function koropiece(blocks, origin)
 		return self:offsetblocks(self.blocks, {x, y})
 	end
 
-	function piece:draw(offset, blocksize)
+	function piece:draw(offset, blocksize, preview)
+		preview = preview or false
+		if preview then offset = vec2.add(offset, vec2.mul(self.previewoffset, {blocksize, blocksize})) end
+
+		love.graphics.setColor(unpack(self.color))
 		for _,block in ipairs(self.blocks) do
 			local xpos = block[1] * blocksize + offset[1]
 			local ypos = block[2] * blocksize + offset[2]
 			love.graphics.draw(assets.graphics.block, xpos, ypos)
 		end
+		love.graphics.setColor({255, 255, 255})
 	end
 
 	return piece

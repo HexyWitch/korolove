@@ -1,5 +1,4 @@
 function blockgrid(borderwidth, xw, yw, blocksize)
-	local drawrect = love.graphics.rectangle
 
 	local blockgrid = {
 		borderwidth = borderwidth,
@@ -14,8 +13,9 @@ function blockgrid(borderwidth, xw, yw, blocksize)
 	function blockgrid:drawblocks()
 		for y = 1, self.numyblocks do
 			for x = 1, self.numxblocks do
-				if self:getblock(x, y) then
-					self:drawblock(x, y)
+				local color = self:getblock(x, y)
+				if color then
+					self:drawblock(x, y, color)
 				end
 			end 
 		end
@@ -26,10 +26,14 @@ function blockgrid(borderwidth, xw, yw, blocksize)
 		piece:draw(offset, self.blocksize)
 	end
 
-	function blockgrid:drawblock(x, y)
+	function blockgrid:drawblock(x, y, color)
+		color = color or {255, 255, 255}
 		local xpos = self.borderwidth + (x-1) * self.blocksize
 		local ypos = (y-1) * self.blocksize
-		drawrect("fill", xpos, ypos, self.blocksize, self.blocksize)
+
+		love.graphics.setColor(unpack(color))
+		love.graphics.draw(assets.graphics.block, xpos, ypos)
+		love.graphics.setColor(255, 255, 255)
 	end
 
 	function blockgrid:draw()
@@ -48,7 +52,7 @@ function blockgrid(borderwidth, xw, yw, blocksize)
 	function blockgrid:placepiece(piece)
 		for _,block in ipairs(piece.blocks) do
 			local placeblock = {block[1] + piece.position[1], block[2] + piece.position[2]}
-			self:setblock(placeblock[1], placeblock[2], true)
+			self:setblock(placeblock[1], placeblock[2], piece.color)
 		end
 	end
 
@@ -70,7 +74,6 @@ function blockgrid(borderwidth, xw, yw, blocksize)
 	function blockgrid:validateblocks(blocks)
 		for _,block in ipairs(blocks) do
 			local blockpos = {block[1], block[2]}
-			drawrect("fill", block[1] + 10, block[2] + 10, 10, 10)
 			if not self:inside(blockpos) or self:getblock(blockpos[1], blockpos[2]) then
 				return false
 			end
@@ -79,7 +82,7 @@ function blockgrid(borderwidth, xw, yw, blocksize)
 	end
 
 	function blockgrid:clearemptyrows()
-		local sweepdown = false
+		local cleared = false
 
 		local y = self.numyblocks
 		while y > 0 do
@@ -90,11 +93,15 @@ function blockgrid(borderwidth, xw, yw, blocksize)
 
 			if rowisfull then
 				self:sweepdown(y)
-				y = self.numyblocks --Do this row again because blocks have moved down
+				y = y + 1 --Do this row again because blocks have moved down
+
+				cleared = true
 			else
 				y = y - 1
 			end
 		end
+
+		return cleared
 	end
 
 	--Moves all blocks down that are higher than fromY

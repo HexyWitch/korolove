@@ -9,9 +9,9 @@ function gamestate()
 		state.state = self
 	end
 
-	function state:keypressed(key)
+	function state:keypressed(key, isrepeat)
 		if self.activestate then
-			self.activestate:keypressed(key)
+			self.activestate:keypressed(key, isrepeat)
 		end
 	end
 
