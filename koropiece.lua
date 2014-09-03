@@ -30,6 +30,15 @@ function koropiece(blocks, origin, color, previewoffset)
 		return newblocks
 	end
 
+	function piece:lowestblock()
+		local lowest = 0
+
+		for _,block in ipairs(self.blocks) do
+			if block[2] > lowest then lowest = block[2] end
+		end
+		return lowest
+	end
+
 	function piece:offsetblocks(blocks, offset)
 		local movedblocks = {}
 		local newposition = {self.position[1] + offset[1], self.position[2] + offset[2]}

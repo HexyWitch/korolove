@@ -92,10 +92,12 @@ function blockgrid(borderwidth, xw, yw, blocksize)
 			end
 
 			if rowisfull then
+				if not cleared then cleared = 0 end
+
 				self:sweepdown(y)
 				y = y + 1 --Do this row again because blocks have moved down
 
-				cleared = true
+				cleared = cleared + 1
 			else
 				y = y - 1
 			end

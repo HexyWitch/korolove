@@ -21,14 +21,14 @@ function gamestate()
 		end
 	end
 
-	function state:enter(name)
+	function state:enter(name, statedata)
 		--Exit currently active stave
 		if self.activestate then self:exit() end
 
 		self.activestate = self.states[name]
 
 		if self.activestate then
-			self.activestate:enter()
+			self.activestate:enter(statedata)
 		end
 	end
 

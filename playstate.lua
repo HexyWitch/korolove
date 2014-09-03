@@ -12,6 +12,8 @@ function playstate:enter()
 	self.updateinterval = self.baseupdateinterval
 	self.updatetimer = 0
 
+	self.score = 0
+
 	self:firstpiece()
 
 	if assets.sounds.music then
@@ -57,9 +59,17 @@ function playstate:update(dt)
 			--Can't move it down, delete the piece and place blocks in the grid
 			self.blockgrid:placepiece(self.activepiece)
 
-			if self.blockgrid:clearemptyrows() then
+			local cleared = self.blockgrid:clearemptyrows()
+			if cleared then
 				self.baseupdateinterval = self.baseupdateinterval * 0.95
 				assets.sounds.clear:play()
+
+
+				for i = 0, cleared - 1 do
+					self.score = self.score + 100
+					self.score = self.score + 50 * i
+				end
+
 			else
 			    assets.sounds.blip:play()
 			end
@@ -78,6 +88,8 @@ function playstate:draw()
 	self.blockgrid:draw()
 	self.blockgrid:drawpiece(self.activepiece)
 	self:drawnextpiece()
+
+	self:drawscore()
 end
 
 function playstate:exit()
@@ -96,12 +108,14 @@ end
 function playstate:newpiece()
 	self.activepiece = self.nextpiece
 	self.nextpiece = koropiece(piecetypes.random())
-	self.activepiece.position = {4, 0}
+
+	local yoffset = self.activepiece:lowestblock()
+	self.activepiece.position = {4, -yoffset}
 
 	local placed = self.activepiece:offsetblocks(self.activepiece.blocks, {0,0})
 
 	if not self.blockgrid:validateblocks(placed) then
-		self.state:enter("playstate")
+		self.state:enter("endstate", {blockgrid = self.blockgrid, score = self.score})
 	end
 end
 
@@ -125,4 +139,11 @@ end
 function playstate:drawnextpiece()
 	love.graphics.draw(assets.graphics.nextpiece, 316, 44) --Box around the piece
 	self.nextpiece:draw({326, 54}, 25, true)
+end
+
+function playstate:drawscore()
+	love.graphics.draw(assets.graphics.scorebox, 316, 400)
+
+	love.graphics.setFont(assets.fonts.freesans26)
+	love.graphics.printf(self.score, 326, 404, 75, "right")
 end
